@@ -4,21 +4,49 @@ Generate or edit images using OpenAI GPT or Google Gemini APIs.
 
 ## Installation
 
+### From source (pre-publication)
+
+This package is not yet published to PyPI. Install from the local source:
+
 ```bash
-# Install with uv (recommended)
-uv add image-gen
+# Clone and install as a CLI tool (requires Python 3.11+)
+git clone https://github.com/wolf/image-gen.git
+cd image-gen
+uv tool install --python 3.11 ".[all]"
 
-# With OpenAI backend
-uv add "image-gen[openai]"
+# To update after code changes
+uv tool install --force --python 3.11 ".[all]"
+```
 
-# With Gemini backend
-uv add "image-gen[gemini]"
+Or run directly without installing:
 
-# With all backends
-uv add "image-gen[all]"
+```bash
+cd image-gen
+uv run image-gen -p "your prompt"
+```
+
+### From PyPI (after publication)
+
+Once published, install with:
+
+```bash
+# Install as a CLI tool with uv (recommended)
+uv tool install "image-gen[all]"
 
 # Or with pip
 pip install "image-gen[all]"
+
+# With specific backends only
+uv tool install "image-gen[openai]"   # OpenAI only
+uv tool install "image-gen[gemini]"   # Gemini only
+```
+
+### Adding as a project dependency
+
+If you want to use image-gen as a library in your own project:
+
+```bash
+uv add "image-gen[all]"
 ```
 
 ## Usage
@@ -44,6 +72,29 @@ image-gen photo.jpg -p "Make it look like a painting"
 
 # Multi-image composition
 image-gen style.jpg photo.jpg -p "Apply the style of Image 1 to Image 2"
+```
+
+### Output filenames
+
+When no output path is specified with `-o`:
+
+- **Generation (no input images):** saves to `generated_1.png`, `generated_2.png`, etc.
+- **Editing (with input images):** uses the last input filename as the base (e.g., `photo.jpg` → `photo_1.png`, `photo_2.png`, etc.)
+
+The tool always appends a number suffix and finds the next available number to avoid overwriting existing files.
+
+```bash
+# Outputs: generated_1.png
+image-gen -p "A sunset"
+
+# Outputs: generated_1.png, generated_2.png, generated_3.png
+image-gen -p "A sunset" -n 3
+
+# Outputs: photo_1.png
+image-gen photo.jpg -p "Add a rainbow"
+
+# Outputs: photo_1.png, photo_2.png
+image-gen photo.jpg -p "Add a rainbow" -n 2
 ```
 
 ### Options
