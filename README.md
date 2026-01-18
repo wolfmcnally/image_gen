@@ -101,8 +101,8 @@ image-gen photo.jpg -p "Add a rainbow" -n 2
 
 | Option              | Description                                              | Default         |
 |---------------------|----------------------------------------------------------|-----------------|
-| `-p, --prompt`      | Text prompt (appended to `-f` if both provided)          | -               |
-| `-f, --prompt-file` | Read prompt from file                                    | -               |
+| `-p, --prompt`      | Prompt text (repeatable, combined in order with `-f`)    | -               |
+| `-f, --prompt-file` | Read prompt from file (repeatable, combined with `-p`)   | -               |
 | `--api`             | API backend: `gpt` or `gemini`                           | `gpt`           |
 | `-o, --output`      | Output file path                                         | `generated.png` |
 | `-q, --quality`     | Quality: `high`, `medium`, `low`                         | `high`          |
@@ -111,7 +111,12 @@ image-gen photo.jpg -p "Add a rainbow" -n 2
 | `--transparent`     | Transparent background (GPT only)                        | `false`         |
 | `--moderation`      | Moderation level: `auto`, `low`                          | `low`           |
 
-At least one of `-p` or `-f` is required. If both are provided, the file content and prompt are concatenated.
+At least one of `-p` or `-f` is required. Both can be repeated and are concatenated in the order given, separated by newlines.
+
+```bash
+# Example: combine a style file with specific instructions
+image-gen photo.jpg -f style.txt -p "Make the sky more dramatic" -p "Add lens flare"
+```
 
 ### Environment Variables
 

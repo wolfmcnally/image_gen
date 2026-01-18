@@ -13,6 +13,36 @@ DEFAULT_QUALITY = "high"
 DEFAULT_SIZE = "1024x1024"
 
 
+class AppendPrompt(argparse.Action):
+    """Custom action to append prompt text to a shared list, preserving order."""
+
+    def __call__(
+        self,
+        parser: argparse.ArgumentParser,
+        namespace: argparse.Namespace,
+        values: str | Path,
+        option_string: str | None = None,
+    ) -> None:
+        if not hasattr(namespace, "prompt_parts") or namespace.prompt_parts is None:
+            namespace.prompt_parts = []
+        namespace.prompt_parts.append(("text", values))
+
+
+class AppendPromptFile(argparse.Action):
+    """Custom action to append prompt file path to a shared list, preserving order."""
+
+    def __call__(
+        self,
+        parser: argparse.ArgumentParser,
+        namespace: argparse.Namespace,
+        values: str | Path,
+        option_string: str | None = None,
+    ) -> None:
+        if not hasattr(namespace, "prompt_parts") or namespace.prompt_parts is None:
+            namespace.prompt_parts = []
+        namespace.prompt_parts.append(("file", Path(values)))
+
+
 def validate_image_path(path: Path) -> None:
     """Validate that the path exists and has a valid image extension."""
     if not path.exists():
@@ -77,10 +107,15 @@ def main() -> None:
         help="Output size - WxH pixels or aspect ratio like 16:9 (default: 1024x1024)",
     )
     parser.add_argument(
-        "-p", "--prompt", help="Prompt describing the image or edit (appended to --prompt-file if both provided)"
+        "-p", "--prompt",
+        action=AppendPrompt,
+        help="Prompt text (can be repeated, combined in order with -f)",
     )
     parser.add_argument(
-        "-f", "--prompt-file", type=Path, help="Path to file containing the prompt"
+        "-f", "--prompt-file",
+        type=Path,
+        action=AppendPromptFile,
+        help="Path to file containing prompt (can be repeated, combined in order with -p)",
     )
     parser.add_argument(
         "-n", "--count", type=int, default=1, help="Number of variations to generate (default: 1)"
@@ -99,19 +134,21 @@ def main() -> None:
     args = parser.parse_args()
 
     # Resolve prompt: require at least one of --prompt or --prompt-file
-    if not args.prompt and not args.prompt_file:
+    prompt_parts = getattr(args, "prompt_parts", None) or []
+    if not prompt_parts:
         parser.error("one of the arguments -p/--prompt -f/--prompt-file is required")
 
-    # Build final prompt: file content + optional appended prompt
-    if args.prompt_file:
-        if not args.prompt_file.exists():
-            sys.stderr.write(f"[!] Prompt file not found: {args.prompt_file}\n")
-            sys.exit(1)
-        file_prompt = args.prompt_file.read_text().strip()
-        if args.prompt:
-            args.prompt = f"{file_prompt} {args.prompt}"
-        else:
-            args.prompt = file_prompt
+    # Build final prompt from parts in order
+    prompt_texts: list[str] = []
+    for part_type, part_value in prompt_parts:
+        if part_type == "text":
+            prompt_texts.append(part_value.strip())
+        elif part_type == "file":
+            if not part_value.exists():
+                sys.stderr.write(f"[!] Prompt file not found: {part_value}\n")
+                sys.exit(1)
+            prompt_texts.append(part_value.read_text().strip())
+    args.prompt = "\n".join(prompt_texts)
 
     # Validate image count (GPT limit is 4, Gemini supports more)
     max_images = 4 if args.api == "gpt" else 14
