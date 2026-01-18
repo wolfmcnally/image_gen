@@ -14,8 +14,8 @@ git clone https://github.com/wolf/image-gen.git
 cd image-gen
 uv tool install --python 3.11 ".[all]"
 
-# To update after code changes
-uv tool install --force --python 3.11 ".[all]"
+# To update after code changes (clear cache to ensure fresh install)
+uv cache clean image-gen && uv tool install --force --python 3.11 ".[all]"
 ```
 
 Or run directly without installing:
@@ -99,17 +99,19 @@ image-gen photo.jpg -p "Add a rainbow" -n 2
 
 ### Options
 
-| Option              | Description                             | Default         |
-|---------------------|-----------------------------------------|-----------------|
-| `-p, --prompt`      | Text prompt describing the image        | (required)      |
-| `-f, --prompt-file` | Read prompt from file                   | -               |
-| `--api`             | API backend: `gpt` or `gemini`          | `gpt`           |
-| `-o, --output`      | Output file path                        | `generated.png` |
-| `-q, --quality`     | Quality: `high`, `medium`, `low`        | `high`          |
-| `--size`            | Size: `WxH` or aspect ratio like `16:9` | `1024x1024`     |
-| `-n, --count`       | Number of variations to generate        | `1`             |
-| `--transparent`     | Transparent background (GPT only)       | `false`         |
-| `--moderation`      | Moderation level: `auto`, `low`         | `low`           |
+| Option              | Description                                              | Default         |
+|---------------------|----------------------------------------------------------|-----------------|
+| `-p, --prompt`      | Text prompt (appended to `-f` if both provided)          | -               |
+| `-f, --prompt-file` | Read prompt from file                                    | -               |
+| `--api`             | API backend: `gpt` or `gemini`                           | `gpt`           |
+| `-o, --output`      | Output file path                                         | `generated.png` |
+| `-q, --quality`     | Quality: `high`, `medium`, `low`                         | `high`          |
+| `--size`            | Size: `WxH` or aspect ratio like `16:9`                  | `1024x1024`     |
+| `-n, --count`       | Number of variations to generate                         | `1`             |
+| `--transparent`     | Transparent background (GPT only)                        | `false`         |
+| `--moderation`      | Moderation level: `auto`, `low`                          | `low`           |
+
+At least one of `-p` or `-f` is required. If both are provided, the file content and prompt are concatenated.
 
 ### Environment Variables
 

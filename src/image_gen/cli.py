@@ -76,9 +76,10 @@ def main() -> None:
         default=DEFAULT_SIZE,
         help="Output size - WxH pixels or aspect ratio like 16:9 (default: 1024x1024)",
     )
-    prompt_group = parser.add_mutually_exclusive_group(required=True)
-    prompt_group.add_argument("-p", "--prompt", help="Prompt describing the image or edit")
-    prompt_group.add_argument(
+    parser.add_argument(
+        "-p", "--prompt", help="Prompt describing the image or edit (appended to --prompt-file if both provided)"
+    )
+    parser.add_argument(
         "-f", "--prompt-file", type=Path, help="Path to file containing the prompt"
     )
     parser.add_argument(
@@ -97,12 +98,20 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    # Resolve prompt from file if specified
+    # Resolve prompt: require at least one of --prompt or --prompt-file
+    if not args.prompt and not args.prompt_file:
+        parser.error("one of the arguments -p/--prompt -f/--prompt-file is required")
+
+    # Build final prompt: file content + optional appended prompt
     if args.prompt_file:
         if not args.prompt_file.exists():
             sys.stderr.write(f"[!] Prompt file not found: {args.prompt_file}\n")
             sys.exit(1)
-        args.prompt = args.prompt_file.read_text().strip()
+        file_prompt = args.prompt_file.read_text().strip()
+        if args.prompt:
+            args.prompt = f"{file_prompt} {args.prompt}"
+        else:
+            args.prompt = file_prompt
 
     # Validate image count (GPT limit is 4, Gemini supports more)
     max_images = 4 if args.api == "gpt" else 14
